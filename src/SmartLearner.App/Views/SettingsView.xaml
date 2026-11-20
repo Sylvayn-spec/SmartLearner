@@ -1,0 +1,195 @@
+<UserControl x:Class="SmartLearner.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             FontFamily="{DynamicResource BodyFont}">
+
+    <UserControl.Resources>
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+        <StackPanel>
+
+            <TextBlock Text="设置"
+                       FontFamily="{DynamicResource HeadingFont}"
+                       FontSize="30"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource InkBrush}" />
+            <TextBlock Text="数据、凭证与外观"
+                       Margin="0,8,0,22"
+                       FontSize="13"
+                       Foreground="{DynamicResource SubtleBrush}" />
+
+            <!-- 数据目录 -->
+            <Border Style="{StaticResource GlassCardStyle}" Margin="0,0,0,16">
+                <Border Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="数据存放目录"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource InkBrush}" />
+                        <TextBlock Text="{Binding DataRoot}"
+                                   Margin="0,10,0,0"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SubtleBrush}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button Style="{StaticResource InkButton}" Content="更改目录"
+                                    Command="{Binding ChangeDataRootCommand}"
+                                    Padding="16,7" />
+                            <Button Style="{StaticResource InkButton}" Content="恢复默认"
+                                    Command="{Binding ResetDataRootCommand}"
+                                    Margin="10,0,0,0"
+                                    Padding="16,7" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- Access Secret -->
+            <Border Style="{StaticResource GlassCardStyle}" Margin="0,0,0,16">
+                <Border Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="知乎 Access Secret"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource InkBrush}" />
+                        <TextBlock Text="{Binding SecretStateText}"
+                                   Margin="0,8,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SubtleBrush}" />
+                        <TextBox Margin="0,16,0,0"
+                                 Text="{Binding SecretInput, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="粘贴开放平台个人中心的 Access Secret"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 FontSize="13" />
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Style="{StaticResource InkButton}" Content="保存"
+                                    Command="{Binding SaveSecretCommand}"
+                                    Padding="18,7" />
+                            <Button Style="{StaticResource InkButton}" Content="清除"
+                                    Command="{Binding ClearSecretCommand}"
+                                    Margin="10,0,0,0"
+                                    Padding="18,7" />
+                        </StackPanel>
+                        <TextBlock Text="Secret 使用 Windows DPAPI 加密，仅本机当前用户可解密"
+                                   Margin="0,12,0,0"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SubtleBrush}" />
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- 百炼 -->
+            <Border x:Name="BailianCard" Style="{StaticResource GlassCardStyle}" Margin="0,0,0,16">
+                <Border Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="阿里百炼 API Key"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource InkBrush}" />
+                        <TextBlock Text="{Binding BailianStateText}"
+                                   Margin="0,8,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SubtleBrush}" />
+                        <TextBox Margin="0,16,0,0"
+                                 Text="{Binding BailianKeyInput, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="sk- 开头的百炼 API Key"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 FontSize="13" />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding ChatModel, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="对话模型"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     FontSize="12"
+                                     Margin="0,0,8,0" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding EmbeddingModel, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="向量模型"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     FontSize="12"
+                                     Margin="8,0,0,0" />
+                        </Grid>
+
+                        <TextBox Text="{Binding OcrModel, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,10,0,0"
+                                 materialDesign:HintAssist.Hint="视觉模型（扫描件 OCR）"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 FontSize="12" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Style="{StaticResource InkButton}" Content="保存"
+                                    Command="{Binding SaveBailianCommand}"
+                                    Padding="18,7" />
+                            <Button Style="{StaticResource InkButton}" Content="清除"
+                                    Command="{Binding ClearBailianCommand}"
+                                    Margin="10,0,0,0"
+                                    Padding="18,7" />
+                        </StackPanel>
+
+                        <TextBlock Text="用于「整理」与「书僮」，同样用 DPAPI 加密，仅本机可解密"
+                                   Margin="0,12,0,0"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SubtleBrush}" />
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- 外观与缓存 -->
+            <Border Style="{StaticResource GlassCardStyle}">
+                <Border Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="外观与缓存"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource InkBrush}" />
+
+                        <DockPanel Margin="0,18,0,0" LastChildFill="False">
+                            <StackPanel>
+                                <TextBlock Text="明暗主题"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource InkBrush}" />
+                                <TextBlock Text="宣纸白 / 夜读墨"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource SubtleBrush}" />
+                            </StackPanel>
+                            <Button Style="{StaticResource InkButton}" DockPanel.Dock="Right"
+                                    Content="切换主题"
+                                    Command="{Binding ToggleDarkModeCommand}"
+                                    Padding="16,7"
+                                    VerticalAlignment="Center" />
+                        </DockPanel>
+
+                        <DockPanel Margin="0,18,0,0" LastChildFill="False">
+                            <StackPanel>
+                                <TextBlock Text="推送缓存时长"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource InkBrush}" />
+                                <TextBlock Text="过期后会重新拉取知乎内容"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource SubtleBrush}" />
+                            </StackPanel>
+                            <ComboBox DockPanel.Dock="Right"
+                                      Width="120"
+                                      VerticalAlignment="Center"
+                                      ItemsSource="{Binding TtlOptions}"
+                                      SelectedItem="{Binding CacheTtlMinutes}" />
+                        </DockPanel>
+
+                        <TextBlock Text="{Binding StatusText}"
+                                   Margin="0,18,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource AccentBrush}" />
+                    </StackPanel>
+                </Border>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

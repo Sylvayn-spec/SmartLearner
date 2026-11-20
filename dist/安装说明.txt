@@ -1,0 +1,46 @@
+Smart Learner 1.0.0 · 下载与安装说明
+
+一、下载
+安装包：SmartLearner-Setup-1.0.0.exe（约 55.7 MB）
+校验值（SHA256）：
+e1c4e3e28143b198bce498a00c0d889c3fb953dd70eaa23c385385e861750fc9
+
+如果要把下载页放到网上，请把以下四个文件放在同一个目录一起上传：
+· index.html
+· SmartLearner-Setup-1.0.0.exe
+· demo.mp4（30 秒演示视频，页面右侧自动播放）
+· preview.png（视频封面）
+
+二、安装
+1. 双击 SmartLearner-Setup-1.0.0.exe。
+2. 向导里可以修改安装目录（默认：当前用户目录\Programs\Smart Learner）。
+3. 附加任务页可以勾选：
+   · 创建桌面快捷方式（默认勾选）
+   · 创建快速启动栏快捷方式（默认不勾选）
+4. 安装完成后可直接启动。
+
+三、系统要求
+· Windows 10 / 11，64 位
+· Microsoft Edge WebView2 运行时（Win11 自带；Win10 缺失时安装程序会提示，可从微软官网下载 Evergreen Runtime）
+
+四、首次使用
+打开应用后进入「设置」：
+· 填写知乎开放平台 Access Key
+· 填写阿里百炼 API Key
+Key 会以 DPAPI 加密保存在本机。
+
+五、数据位置
+默认：桌面\SmartLearner
+包含：Documents（课程资料）、chat（对话）、Database（知识库索引）、AccessKey、Preference、logs。
+卸载程序只删除程序文件，不会删除这个目录。
+
+六、常见提示
+· SmartScreen 拦截：点「更多信息 → 仍要运行」（安装包未做代码签名）。
+· 杀毒软件误报：可添加信任，或改用源码自行构建。
+· 卸载：设置 → 应用 → Smart Learner → 卸载；也可以运行安装目录下的 unins000.exe。
+
+七、从源码重新打包
+1. dotnet publish src\SmartLearner.App\SmartLearner.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o artifacts\publish
+2. 用 Inno Setup 6 编译 installer.iss：
+   "C:\Users\<你>\AppData\Local\Programs\Inno Setup 6\ISCC.exe" installer.iss
+3. 生成的安装包在 dist\SmartLearner-Setup-1.0.0.exe。

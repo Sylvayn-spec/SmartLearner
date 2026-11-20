@@ -1,0 +1,851 @@
+<UserControl x:Class="SmartLearner.App.Views.CourseView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             FontFamily="{DynamicResource BodyFont}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="AssistantFileTemplate">
+            <CheckBox IsChecked="{Binding IsSelected}"
+                      Height="24"
+                      MinHeight="0"
+                      Margin="0,1"
+                      Padding="0"
+                      VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}"
+                               FontSize="12"
+                               Foreground="{DynamicResource InkBrush}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SizeText}"
+                               Margin="8,0,0,0"
+                               FontSize="10"
+                               Foreground="{DynamicResource SubtleBrush}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding StatusText}"
+                               Margin="8,0,0,0"
+                               FontSize="10"
+                               Foreground="{DynamicResource GoldBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </CheckBox>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 页面标题（全屏时隐藏） -->
+        <StackPanel Grid.Row="0"
+                    Margin="0,0,0,12"
+                    Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+            <TextBlock Text="课程"
+                       FontFamily="{DynamicResource HeadingFont}"
+                       FontSize="30"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource InkBrush}" />
+            <TextBlock Text="资料管理与「书僮」问答"
+                       Margin="0,8,0,0"
+                       FontSize="13"
+                       Foreground="{DynamicResource SubtleBrush}" />
+        </StackPanel>
+
+        <!-- 页签（全屏时隐藏） -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,12"
+                    Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+            <Button Content="课程文档"
+                    Command="{Binding SelectDocsTabCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource TabButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource MossSoftBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <Button Content="课程助手"
+                    Margin="8,0,0,0"
+                    Command="{Binding SelectAssistantTabCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource TabButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource MossSoftBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <!-- 课程文档 -->
+            <Grid Visibility="{Binding DocsVisibility}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Width="330"
+                        Style="{StaticResource GlassCardStyle}"
+                        Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ComboBox Grid.Row="0"
+                                  ItemsSource="{Binding Courses}"
+                                  SelectedItem="{Binding SelectedCourse}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="课程"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  FontSize="13" />
+
+                        <DockPanel Grid.Row="1" Margin="0,14,0,8" LastChildFill="True">
+                            <Button DockPanel.Dock="Right"
+                                    Style="{StaticResource GhostButton}"
+                                    Content="上一级"
+                                    FontSize="11"
+                                    Padding="10,4"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding GoUpCommand}" />
+                            <Button DockPanel.Dock="Right"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTip="刷新文件列表"
+                                    Command="{Binding RefreshFilesCommand}">
+                                <materialDesign:PackIcon Kind="Refresh"
+                                                         Width="16" Height="16"
+                                                         Foreground="{DynamicResource SubtleBrush}" />
+                            </Button>
+                            <TextBlock Text="{Binding Breadcrumb}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SubtleBrush}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+
+                        <ListBox Grid.Row="2"
+                                 ItemsSource="{Binding Entries}"
+                                 SelectedItem="{Binding SelectedEntry}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 MouseDoubleClick="OnEntryDoubleClick"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="8" />
+                                    <Setter Property="Margin" Value="0,2" />
+                                    <Setter Property="Cursor" Value="Hand" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="Bd"
+                                                        Background="Transparent"
+                                                        CornerRadius="8"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MossSoftBrush}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                 Width="18" Height="18"
+                                                                 Foreground="{DynamicResource MossBrush}"
+                                                                 VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   Margin="10,0,8,0"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource InkBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding SizeText}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource SubtleBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="3" Margin="0,12,0,0">
+                            <TextBlock Text="{Binding StatusText}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SubtleBrush}"
+                                       Margin="0,0,0,10" />
+                            <UniformGrid Columns="3">
+                                <Button Style="{StaticResource InkButton}"
+                                        Content="导入"
+                                        FontSize="12"
+                                        Padding="10,6"
+                                        Margin="0,0,6,0"
+                                        Command="{Binding ImportFilesCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="笔记"
+                                        FontSize="12"
+                                        Padding="10,6"
+                                        Margin="3,0"
+                                        Command="{Binding NewNoteCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="删除"
+                                        FontSize="12"
+                                        Padding="10,6"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding DeleteEntryCommand}" />
+                            </UniformGrid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 预览 -->
+                <Border Grid.Column="1">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+                            <Setter Property="Margin" Value="16,0,0,0" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Ui.IsReaderFullscreen}" Value="True">
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="CornerRadius" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <Grid Margin="18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="0,0,0,12" LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <TextBlock Text="按 Esc 退出全屏"
+                                           FontSize="11"
+                                           Margin="0,0,12,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SubtleBrush}"
+                                           Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource BoolToVis}}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="保存"
+                                        FontSize="12"
+                                        Padding="14,6"
+                                        Margin="0,0,8,0"
+                                        Visibility="{Binding MarkdownVisibility}"
+                                        Command="{Binding SaveNoteCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="{Binding MarkdownEditText}"
+                                        FontSize="11"
+                                        Padding="10,5"
+                                        Margin="0,0,8,0"
+                                        Visibility="{Binding IsMarkdownFile, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding ToggleMarkdownEditCommand}" />
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        Command="{Binding ToggleFullscreenCommand}"
+                                        ToolTip="全屏阅读">
+                                    <materialDesign:PackIcon Kind="{Binding FullscreenIcon}"
+                                                             Width="18" Height="18"
+                                                             Foreground="{DynamicResource InkBrush}" />
+                                </Button>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding PreviewTitle}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource InkBrush}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+
+                        <Grid Grid.Row="1">
+                            <wv2:WebView2 x:Name="PdfView"
+                                          Visibility="{Binding WebVisibility}" />
+
+                            <TextBox Text="{Binding MarkdownText, UpdateSourceTrigger=PropertyChanged}"
+                                     Visibility="{Binding MarkdownVisibility}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     FontFamily="Consolas, Microsoft YaHei UI"
+                                     FontSize="13"
+                                     Padding="12"
+                                     BorderThickness="0"
+                                     Background="{DynamicResource CardBrush}"
+                                     VerticalScrollBarVisibility="Auto" />
+
+                            <StackPanel Visibility="{Binding NoneVisibility}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="FileDocumentOutline"
+                                                         Width="42" Height="42"
+                                                         Foreground="{DynamicResource SubtleBrush}" />
+                                <TextBlock Text="选择左侧文件以预览"
+                                           Margin="0,12,0,0"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource SubtleBrush}" />
+                            </StackPanel>
+
+                            <StackPanel Visibility="{Binding OtherVisibility}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="FileWordOutline"
+                                                         Width="42" Height="42"
+                                                         Foreground="{DynamicResource SubtleBrush}" />
+                                <TextBlock Text="该格式暂不支持应用内预览"
+                                           Margin="0,12,0,0"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource SubtleBrush}"
+                                           HorizontalAlignment="Center" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="用系统程序打开"
+                                        Margin="0,14,0,0"
+                                        Padding="16,7"
+                                        HorizontalAlignment="Center"
+                                        Command="{Binding OpenInSystemCommand}" />
+                            </StackPanel>
+
+                            <!-- 全屏提示放在标题栏，避免被 WebView2 原生窗口遮挡 -->
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 课程助手 -->
+            <Grid Visibility="{Binding AssistantVisibility}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 左：资料与建库 -->
+                <Border Grid.Column="0"
+                        Width="330"
+                        Style="{StaticResource GlassCardStyle}"
+                        Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="知识库"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource InkBrush}" />
+
+                            <ComboBox Margin="0,8,0,0"
+                                      ItemsSource="{Binding Courses}"
+                                      SelectedItem="{Binding AssistantCourse}"
+                                      DisplayMemberPath="Name"
+                                      FontSize="12" />
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1"
+                                      Margin="0,8,0,0"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <DockPanel>
+                                    <CheckBox DockPanel.Dock="Right"
+                                              Content="全选"
+                                              FontSize="11"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding SelectAllNote}" />
+                                    <TextBlock Text="笔记 Note"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource InkBrush}" />
+                                    <TextBlock Text="{Binding NoteFiles.Count}"
+                                               Margin="6,0,0,0"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource SubtleBrush}"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
+
+                                <ItemsControl Margin="0,4,0,0"
+                                              ItemsSource="{Binding NoteFiles}"
+                                              ItemTemplate="{StaticResource AssistantFileTemplate}" />
+
+                                <DockPanel Margin="0,6,0,0">
+                                    <CheckBox DockPanel.Dock="Right"
+                                              Content="全选"
+                                              FontSize="11"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding SelectAllTextbook}" />
+                                    <TextBlock Text="资料 TextBook"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource InkBrush}" />
+                                    <TextBlock Text="{Binding TextbookFiles.Count}"
+                                               Margin="6,0,0,0"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource SubtleBrush}"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
+
+                                <ItemsControl Margin="0,4,0,0"
+                                              ItemsSource="{Binding TextbookFiles}"
+                                              ItemTemplate="{StaticResource AssistantFileTemplate}" />
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                            <ProgressBar Value="{Binding AssistantProgress}"
+                                         Maximum="100"
+                                         Height="5"
+                                         Visibility="{Binding AssistantBusy, Converter={StaticResource BoolToVis}}" />
+
+                            <TextBlock Text="{Binding AssistantStatus}"
+                                       Margin="0,4,0,0"
+                                       FontSize="10"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SubtleBrush}" />
+
+                            <UniformGrid Columns="3" Margin="0,6,0,0">
+                                <Button Style="{StaticResource InkButton}"
+                                        Content="开始建库"
+                                        FontSize="12"
+                                        Padding="8,6"
+                                        Margin="0,0,3,0"
+                                        IsEnabled="{Binding CanBuild}"
+                                        Command="{Binding BuildIndexCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="移除索引"
+                                        FontSize="12"
+                                        Padding="8,6"
+                                        Margin="3,0"
+                                        IsEnabled="{Binding CanBuild}"
+                                        Command="{Binding RemoveIndexCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="清空"
+                                        FontSize="12"
+                                        Padding="8,6"
+                                        Margin="3,0,0,0"
+                                        IsEnabled="{Binding CanBuild}"
+                                        Command="{Binding ClearIndexCommand}" />
+                            </UniformGrid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 右：对话 -->
+                <Border Grid.Column="1">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+                            <Setter Property="Margin" Value="16,0,0,0" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Ui.IsReaderFullscreen}" Value="True">
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="CornerRadius" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel LastChildFill="False">
+                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountVoice"
+                                                         Width="20" Height="20"
+                                                         Foreground="{DynamicResource MossBrush}"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="书僮"
+                                           Margin="8,0,0,0"
+                                           FontFamily="{DynamicResource HeadingFont}"
+                                           FontSize="17"
+                                           Foreground="{DynamicResource InkBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <TextBlock Text="按 Esc 退出全屏"
+                                           FontSize="11"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SubtleBrush}"
+                                           Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource BoolToVis}}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="批量删除"
+                                        FontSize="11"
+                                        Padding="8,4"
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVis}}"
+                                        Command="{Binding ToggleSelectionModeCommand}" />
+                                <Button Style="{StaticResource InkButton}"
+                                        Content="删除选中"
+                                        FontSize="11"
+                                        Padding="8,4"
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding DeleteSelectedMessagesCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="取消"
+                                        FontSize="11"
+                                        Padding="8,4"
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding ToggleSelectionModeCommand}" />
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="新建"
+                                        FontSize="11"
+                                        Padding="10,4"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVis}}"
+                                        Command="{Binding NewChatCommand}" />
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        Margin="4,0,0,0"
+                                        ToolTip="删除当前对话"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVis}}"
+                                        Command="{Binding DeleteChatCommand}">
+                                    <materialDesign:PackIcon Kind="DeleteOutline"
+                                                             Width="16" Height="16"
+                                                             Foreground="{DynamicResource SubtleBrush}" />
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        Margin="2,0,0,0"
+                                        ToolTip="批量删除对话"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVis}}"
+                                        Click="OnManageChatsClick">
+                                    <materialDesign:PackIcon Kind="DeleteSweep"
+                                                             Width="17" Height="17"
+                                                             Foreground="{DynamicResource SubtleBrush}" />
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        Margin="2,0,0,0"
+                                        ToolTip="全屏对话"
+                                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVis}}"
+                                        Command="{Binding ToggleFullscreenCommand}">
+                                    <materialDesign:PackIcon Kind="{Binding FullscreenIcon}"
+                                                             Width="17" Height="17"
+                                                             Foreground="{DynamicResource InkBrush}" />
+                                </Button>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <ComboBox x:Name="SessionPicker"
+                                  Grid.Row="1"
+                                  Margin="0,8,0,0"
+                                  HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Sessions}"
+                                  SelectedItem="{Binding CurrentSession}"
+                                  FontSize="11"
+                                  ToolTip="切换历史对话">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel LastChildFill="True" MinWidth="0">
+                                        <Button DockPanel.Dock="Right"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                Width="18" Height="18"
+                                                Padding="0"
+                                                Margin="4,0,0,0"
+                                                ToolTip="删除这个对话"
+                                                Click="OnDeleteSessionClick">
+                                            <materialDesign:PackIcon Kind="Close"
+                                                                     Width="10" Height="10"
+                                                                     Foreground="{DynamicResource SubtleBrush}" />
+                                        </Button>
+                                        <TextBlock Text="{Binding Title}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <ScrollViewer x:Name="ChatScroll"
+                                      Grid.Row="2"
+                                      Margin="0,10,0,0"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Visibility="{Binding HasConversation, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl ItemsSource="{Binding ChatMessages}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <ToggleButton Grid.Column="0"
+                                                          Width="18" Height="18"
+                                                          Margin="0,4,8,0"
+                                                          VerticalAlignment="Top"
+                                                          ToolTip="选择这条消息"
+                                                          IsChecked="{Binding IsSelected}"
+                                                          IsEnabled="{Binding CanDelete}"
+                                                          Visibility="{Binding ShowSelection, Converter={StaticResource BoolToVis}}">
+                                                <ToggleButton.Template>
+                                                    <ControlTemplate TargetType="ToggleButton">
+                                                        <Border x:Name="Box"
+                                                                Width="16" Height="16"
+                                                                CornerRadius="3"
+                                                                BorderThickness="1"
+                                                                BorderBrush="{DynamicResource SubtleBrush}"
+                                                                Background="Transparent">
+                                                            <materialDesign:PackIcon x:Name="Check"
+                                                                                     Kind="Check"
+                                                                                     Width="12" Height="12"
+                                                                                     Foreground="{DynamicResource AccentBrush}"
+                                                                                     Visibility="Collapsed"
+                                                                                     HorizontalAlignment="Center"
+                                                                                     VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsChecked" Value="True">
+                                                                <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                                                                <Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </ToggleButton.Template>
+                                            </ToggleButton>
+
+                                            <Border x:Name="AssistantAvatar"
+                                                    Grid.Column="1"
+                                                    Width="30" Height="30"
+                                                    CornerRadius="15"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource SubtleBrush}"
+                                                    VerticalAlignment="Top"
+                                                    Margin="0,0,8,0">
+                                                <materialDesign:PackIcon Kind="BookOpenVariant"
+                                                                         Width="16" Height="16"
+                                                                         Foreground="{DynamicResource MossBrush}"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <Border x:Name="Bubble"
+                                                    Grid.Column="2"
+                                                    MaxWidth="{Binding ActualWidth, ElementName=ChatScroll, Converter={StaticResource WidthMinus}, ConverterParameter=120}"
+                                                    HorizontalAlignment="Left"
+                                                    Padding="12,9"
+                                                    CornerRadius="12"
+                                                    Background="{DynamicResource CardBrush}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Text}"
+                                                               FontSize="13"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource InkBrush}" />
+
+                                                    <ItemsControl Margin="0,6,0,0"
+                                                                  ItemsSource="{Binding Articles}"
+                                                                  Visibility="{Binding HasArticles, Converter={StaticResource BoolToVis}}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Margin="0,0,0,6"
+                                                                        Padding="0"
+                                                                        Cursor="Hand"
+                                                                        HorizontalContentAlignment="Stretch"
+                                                                        ToolTip="在浏览器中打开"
+                                                                        Command="{Binding DataContext.OpenArticleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button">
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <ContentPresenter />
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                    <Border Background="{DynamicResource AccentSoftBrush}"
+                                                                            CornerRadius="8"
+                                                                            Padding="10">
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding Title}"
+                                                                                       FontSize="12"
+                                                                                       FontWeight="SemiBold"
+                                                                                       TextWrapping="Wrap"
+                                                                                       Foreground="{DynamicResource InkBrush}" />
+                                                                            <TextBlock Text="{Binding Excerpt}"
+                                                                                       FontSize="10"
+                                                                                       TextWrapping="Wrap"
+                                                                                       MaxHeight="38"
+                                                                                       Margin="0,4,0,0"
+                                                                                       Foreground="{DynamicResource SubtleBrush}" />
+                                                                            <TextBlock Text="{Binding Author}"
+                                                                                       FontSize="9"
+                                                                                       Margin="0,4,0,0"
+                                                                                       Foreground="{DynamicResource GoldBrush}" />
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <TextBlock Text="{Binding SourceText}"
+                                                               Margin="0,6,0,0"
+                                                               FontSize="10"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource SubtleBrush}"
+                                                               Visibility="{Binding HasSources, Converter={StaticResource BoolToVis}}" />
+
+                                                    <Button Style="{StaticResource IconButtonStyle}"
+                                                            Width="22" Height="22"
+                                                            Padding="0"
+                                                            HorizontalAlignment="Right"
+                                                            Margin="0,4,0,0"
+                                                            ToolTip="复制这条消息"
+                                                            Command="{Binding DataContext.CopyMessageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}">
+                                                        <materialDesign:PackIcon Kind="ContentCopy"
+                                                                                 Width="12" Height="12"
+                                                                                 Foreground="{DynamicResource SubtleBrush}" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border x:Name="UserAvatar"
+                                                    Grid.Column="3"
+                                                    Width="30" Height="30"
+                                                    CornerRadius="15"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource SubtleBrush}"
+                                                    VerticalAlignment="Top"
+                                                    Margin="8,0,0,0"
+                                                    Visibility="Collapsed">
+                                                <materialDesign:PackIcon Kind="AccountOutline"
+                                                                         Width="16" Height="16"
+                                                                         Foreground="{DynamicResource AccentBrush}"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center" />
+                                            </Border>
+                                        </Grid>
+
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Role}" Value="User">
+                                                <Setter TargetName="AssistantAvatar" Property="Visibility" Value="Collapsed" />
+                                                <Setter TargetName="UserAvatar" Property="Visibility" Value="Visible" />
+                                                <Setter TargetName="Bubble" Property="HorizontalAlignment" Value="Right" />
+                                                <Setter TargetName="Bubble" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <StackPanel Grid.Row="2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding HasConversation, Converter={StaticResource InverseBoolToVis}}">
+                            <materialDesign:PackIcon Kind="BookOpenVariant"
+                                                     Width="38" Height="38"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="{DynamicResource SubtleBrush}" />
+                            <TextBlock Text="当前无对话，请先创建对话"
+                                       Margin="0,10,0,0"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SubtleBrush}" />
+                            <Button Style="{StaticResource InkButton}"
+                                    Content="新建对话"
+                                    Margin="0,12,0,0"
+                                    Padding="16,7"
+                                    HorizontalAlignment="Center"
+                                    Command="{Binding NewChatCommand}" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="3"
+                              Margin="0,10,0,0"
+                              Visibility="{Binding HasConversation, Converter={StaticResource BoolToVis}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="ChatInputBox"
+                                     Text="{Binding ChatInput, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="OnChatKeyDown"
+                                     FontSize="13"
+                                     Padding="10,8"
+                                     MinHeight="64"
+                                     MaxHeight="120"
+                                     MaxLength="3000"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     VerticalContentAlignment="Top"
+                                     materialDesign:TextFieldAssist.CharacterCounterVisibility="Collapsed"
+                                     materialDesign:HintAssist.Hint="问点什么，例如：这章讲了什么？（Shift+回车换行）"
+                                     materialDesign:HintAssist.IsFloating="True" />
+
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource InkButton}"
+                                    Content="发送"
+                                    Margin="10,0,0,0"
+                                    Padding="18,8"
+                                    VerticalAlignment="Bottom"
+                                    IsEnabled="{Binding CanBuild}"
+                                    Command="{Binding SendChatCommand}" />
+
+                            <TextBlock Grid.Row="1"
+                                       Grid.ColumnSpan="2"
+                                       Margin="0,4,0,0"
+                                       HorizontalAlignment="Right"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource SubtleBrush}"
+                                       Text="{Binding ChatInputCount}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

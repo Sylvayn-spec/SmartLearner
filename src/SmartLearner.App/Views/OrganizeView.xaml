@@ -1,0 +1,176 @@
+<UserControl x:Class="SmartLearner.App.Views.OrganizeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             FontFamily="{DynamicResource BodyFont}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0"
+                    Margin="0,0,0,14"
+                    Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+            <TextBlock Text="整理"
+                       FontFamily="{DynamicResource HeadingFont}"
+                       FontSize="30"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource InkBrush}" />
+            <TextBlock Text="把课件整理成可读的中文知识点"
+                       Margin="0,8,0,0"
+                       FontSize="13"
+                       Foreground="{DynamicResource SubtleBrush}" />
+        </StackPanel>
+
+        <!-- 工具栏 -->
+        <Border Grid.Row="1"
+                Style="{StaticResource GlassCardStyle}"
+                Margin="0,0,0,14"
+                Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource InverseBoolToVis}}">
+            <StackPanel Margin="18,16">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="取消"
+                                Padding="14,6"
+                                Margin="0,0,8,0"
+                                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding CancelCommand}" />
+                        <Button Style="{StaticResource InkButton}"
+                                Content="开始整理"
+                                Padding="16,7"
+                                IsEnabled="{Binding CanGenerate}"
+                                Command="{Binding GenerateCommand}" />
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Margin="6,0,0,0"
+                                ToolTip="全屏查看结果"
+                                Command="{Binding ToggleFullscreenCommand}">
+                            <materialDesign:PackIcon Kind="{Binding FullscreenIcon}"
+                                                     Width="18" Height="18"
+                                                     Foreground="{DynamicResource InkBrush}" />
+                        </Button>
+                    </StackPanel>
+
+                    <Button Style="{StaticResource GhostButton}"
+                            Content="选择课件"
+                            Padding="14,7"
+                            Margin="0,0,14,0"
+                            Command="{Binding PickFileCommand}" />
+
+                    <TextBlock Text="{Binding FileName}"
+                               FontSize="13"
+                               Foreground="{DynamicResource InkSoftBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+
+                <ProgressBar Value="{Binding Progress}"
+                             Maximum="100"
+                             Height="6"
+                             Margin="0,14,0,0"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+
+                <DockPanel Margin="0,12,0,0" LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            Style="{StaticResource GhostButton}"
+                            Content="导出到课程"
+                            Padding="14,6"
+                            Margin="8,0,0,0"
+                            Command="{Binding ExportCommand}" />
+
+                    <ComboBox DockPanel.Dock="Right"
+                              Width="170"
+                              ItemsSource="{Binding Courses}"
+                              SelectedItem="{Binding ExportCourse}"
+                              DisplayMemberPath="Name"
+                              materialDesign:HintAssist.Hint="导出到"
+                              materialDesign:HintAssist.IsFloating="True"
+                              FontSize="12" />
+
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="12"
+                               Foreground="{DynamicResource SubtleBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- 结果 -->
+        <Border Grid.Row="2">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Ui.IsReaderFullscreen}" Value="True">
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="CornerRadius" Value="0" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="整理结果 · 按 Esc 退出全屏"
+                           Margin="16,10,0,0"
+                           FontSize="11"
+                           Foreground="{DynamicResource SubtleBrush}"
+                           Visibility="{Binding Ui.IsReaderFullscreen, Converter={StaticResource BoolToVis}}" />
+
+                <Grid Grid.Row="1">
+                    <wv2:WebView2 x:Name="HtmlView"
+                                  Visibility="{Binding PreviewVisibility}" />
+
+                    <TextBox Text="{Binding Markdown, UpdateSourceTrigger=PropertyChanged}"
+                             Visibility="{Binding EditorVisibility}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             FontFamily="Consolas, Microsoft YaHei UI"
+                             FontSize="13"
+                             Padding="16"
+                             BorderThickness="0"
+                             Background="{DynamicResource CardBrush}"
+                             VerticalScrollBarVisibility="Auto" />
+
+                    <StackPanel Visibility="{Binding EmptyVisibility}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="FileDocumentEditOutline"
+                                             Width="48" Height="48"
+                                             Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="选择一份课件，整理成中文知识点"
+                               Margin="0,16,0,0"
+                               FontFamily="{DynamicResource HeadingFont}"
+                               FontSize="18"
+                               Foreground="{DynamicResource InkBrush}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="生成后可编辑、可导出到指定课程的文件夹"
+                               Margin="0,6,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource SubtleBrush}"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <Button Style="{StaticResource GhostButton}"
+                        Content="编辑源文"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,12,14,0"
+                        Padding="12,5"
+                        FontSize="11"
+                        Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}"
+                        Command="{Binding ToggleEditCommand}" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
